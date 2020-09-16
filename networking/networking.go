@@ -3,34 +3,40 @@ package networking
 import (
 	"net"
 	"time"
-	"share/util"
 )
 
-var BROADCAST_ADDRESS, _ = net.ResolveUDPAddr("udp4", "255.255.255.255")
 
 /*
 * TODO: Add in error codes to see if proces was succesful
 */
 
-func handler(pc net.PacketConn, err error) {
-	util.Check(err)
-	pc.Close()
-}
 
 
 func SendMessage(ipa net.Addr,message string) {
 	pc, err := net.ListenPacket("udp4", ":8829")
-	handler(pc, err)
-	
-	util.Check(err)
+	if err != nil {
+		panic(err)
+	}
+	defer pc.Close()
 
-	_, err = pc.WriteTo([]byte(message), ipa)
-	util.Check(err)
+
+	addr, err := net.ResolveUDPAddr("udp4", "192.168.2.255:8829")
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = pc.WriteTo([]byte(message), addr)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func Listener() (net.Addr, int, []byte) {
 	pc, err := net.ListenPacket("udp4", ":8829")
-	handler(pc, err)
+	if err != nil {
+		panic(err)
+	}
+	defer pc.Close()
 
 	buf := make([]byte, 1024)
 	n, addr, err := pc.ReadFrom(buf)
@@ -43,12 +49,17 @@ func Listener() (net.Addr, int, []byte) {
 // Collects responding users in array
 func UserCollect() ([]net.Addr) {
 
+	addr, err := net.ResolveUDPAddr("udp4", "192.168.2.255:8829")
+	if err != nil {
+		panic(err)
+	}
+
 	// Necessary setup
 	var users []net.Addr
 	c1 := make(chan net.Addr, 1)
 
 	// Run a broadcast
-	SendMessage(BROADCAST_ADDRESS, "add_data_here")
+	SendMessage(addr, "data")
 
 	// Run Listener for one second to see
 	// if users are found, if not do a timeout
