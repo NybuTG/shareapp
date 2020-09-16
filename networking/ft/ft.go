@@ -1,4 +1,4 @@
-package filetransfer
+package ft
 
 import (
 	"io"
@@ -6,19 +6,20 @@ import (
 	"os"
 	"share/util"
 	"strconv"
+	"strings"
 )
 
 const BUFFERSIZE = 1024
 
-func Run(ipa string) {
+func Send(ipa string) {
 	connection, err := net.Dial("tcp", ipa)
 	util.Check(err)
 	defer connection.Close()
 	
-	go sendFileToClient(connection)
+	go sendFile(connection)
 }
 
-func sendFileToClient(connection net.Conn) {
+func sendFile(connection net.Conn) {
 	defer connection.Close()
 
 	file, err := os.Open("dummy.dat")
@@ -56,7 +57,36 @@ func fillString(returnString string, toLength int) (string) {
 	return returnString
 }
 
-func getFile(ipa string) {
-	server, err := net.Listen("tcp", ipa)
+func Receive() {
+	server, err := net.Listen("tcp", ":8829")
 	util.Check(err)
+	defer server.Close()
+	for {
+		connection, err := server.Accept()
+		util.Check(err)
+		go getFile(connection)
+	}
+}
+
+func getFile(connection net.Conn) {
+	bufferFileName := make([]byte, 64)
+	bufferFileSize := make([]byte, 10)
+
+	// Process packets into a file
+	connection.Read(bufferFileSize)
+	fileSize, _ := strconv.ParseInt(strings.Trim(string(bufferFileSize), ":"), 10, 64)
+	connection.Read(bufferFileName)
+	fileName := strings.Trim(string(bufferFileName), ":")
+	newFile, err := os.Create(fileName)
+	util.Check(err)
+	defer newFile.Close()
+
+	var receivedBytes int64
+
+	for {
+		if (fileSize - receivedBytes) < BUFFERSIZE {
+			io.CopyN(newFile, connection, BUFFERSIZE)
+			receivedBytes += BUFFERSIZE
+		}
+	}
 }
