@@ -1,14 +1,14 @@
 package networking
 
 import (
+	"fmt"
 	"net"
 	"time"
 )
 
-
 /*
 * TODO: Add in error codes to see if proces was succesful
-*/
+ */
 
 
 
@@ -43,20 +43,23 @@ func Listener() (net.Addr, int, []byte) {
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Printf("%s sent: %s\n", addr, buf[:n])
 	return addr, n, buf
 }
 
 // Collects responding users in array
 func UserCollect() ([]net.Addr) {
 
-	addr, err := net.ResolveUDPAddr("udp4", "192.168.2.255:8829")
-	if err != nil {
-		panic(err)
-	}
 
 	// Necessary setup
 	var users []net.Addr
 	c1 := make(chan net.Addr, 1)
+
+	addr, err := net.ResolveUDPAddr("udp4", "255.255.255.255:8829")
+	if err != nil {
+		panic(err)
+	}
 
 	// Run a broadcast
 	SendMessage(addr, "data")
