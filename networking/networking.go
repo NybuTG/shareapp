@@ -43,7 +43,8 @@ func Listener() (net.Addr, int, []byte) {
 	if err != nil {
 		panic(err)
 	}
-
+	
+	SendMessage(addr, "received")
 	fmt.Printf("%s sent: %s\n", addr, buf[:n])
 	return addr, n, buf
 }

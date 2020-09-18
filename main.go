@@ -36,6 +36,8 @@ func client() {
 
 
 func main() {
-	server()
+	client()
 }
+
+
 
